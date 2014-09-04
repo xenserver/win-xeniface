@@ -439,6 +439,9 @@ static BOOL maybeReboot(void *ctx)
     switch (type) {
     case XShutdownPoweroff:
     case XShutdownReboot:
+        
+        XenstoreRemove("control/shutdown");
+        
         if (WindowsVersion >= 0x500 && WindowsVersion < 0x600)
         {
             /* Windows 2000 InitiateSystemShutdownEx is funny in
@@ -465,13 +468,7 @@ static BOOL maybeReboot(void *ctx)
                                 SHTDN_REASON_FLAG_PLANNED);
 #pragma warning (default: 28159)
             if (!res) {
-                PrintError("ExitWindowsEx");
-                return false;
-            }
-            else
-            {
-                if (XenstoreRemove("control/shutdown"))
-                    return false;
+                PrintError("ExitWindowsEx Failed");
             }
         } else {
 #pragma warning (disable : 28159)
@@ -486,40 +483,29 @@ static BOOL maybeReboot(void *ctx)
                 SHTDN_REASON_FLAG_PLANNED);
 #pragma warning (default: 28159)
             if (!res) {
-                PrintError("InitiateSystemShutdownEx");
-                return false;
-            } else {
-                if (XenstoreRemove("control/shutdown"))
-                    return false;
+                PrintError("InitiateSystemShutdownEx Failed");
             }
         }
         break;
     case XShutdownSuspend:
-        if (XenstorePrintf ("control/hibernation-state", "started"))
-            return false;
+        XenstorePrintf ("control/hibernation-state", "started");
+        XenstoreRemove ("control/shutdown");
         /* Even if we think hibernation is disabled, try it anyway.
            It's not like it can do any harm. */
         res = SetSystemPowerState(FALSE, FALSE);
-        if (XenstoreRemove ("control/shutdown"))
-        { 
-            return false;    
-        }
         if (!res) {
             /* Tell the tools that we've failed. */
             PrintError("SetSystemPowerState");
-            if (XenstorePrintf ("control/hibernation-state", "failed"))
-                return false;
+            XenstorePrintf ("control/hibernation-state", "failed");
         }
         break;
     case XShutdownS3:
-        if (XenstorePrintf ("control/s3-state", "started"))
-            return false;
-        res = SetSuspendState(FALSE, TRUE, FALSE);
+        XenstorePrintf ("control/s3-state", "started");
         XenstoreRemove ("control/shutdown");
+        res = SetSuspendState(FALSE, TRUE, FALSE);
         if (!res) {
             PrintError("SetSuspendState");
-            if (XenstorePrintf ("control/s3-state", "failed"))
-                return false;
+            XenstorePrintf ("control/s3-state", "failed");
         }
         break;
     }
