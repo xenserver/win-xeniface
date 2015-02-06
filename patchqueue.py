@@ -30,7 +30,7 @@
 
 baserepo = "git://hg.uk.xensource.com/closed/windows/xenbits/win-xeniface.git"
 
-basetag = "edb52748ae18b258f71537c7a6957665ae111779"
+basetag = "807f28eec17cfe160ac34db34cbbd057ed970e6f"
 
 package = "xeniface"
 
